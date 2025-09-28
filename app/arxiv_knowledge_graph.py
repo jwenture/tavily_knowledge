@@ -39,12 +39,11 @@ class ArXivKnowledgeGraph:
     def __init__(self, openai_api_key: str, saved_graph_path: str = "app/knowledge_graph.json"):
         """Initialize the knowledge graph builder"""
         self.openai_api_key = openai_api_key
-        os.environ["OPENAI_API_KEY"] = openai_api_key
         
         # Initialize LLM
         self.llm = ChatOpenAI(
             temperature=0.1,
-            model_name="gpt-5-nano",#"qwen",
+            model_name="gpt-5-nano-2025-08-07",#"qwen",
             #openai_api_base=BASE_URL,
             openai_api_key=openai_api_key
         )
