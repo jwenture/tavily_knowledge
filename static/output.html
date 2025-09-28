@@ -1,0 +1,348 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+             /* position absolute is important and the container has to be relative or absolute as well. */
+          div.popup {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 display:none;
+                 background-color:#f5f4ed;
+                 -moz-border-radius: 3px;
+                 -webkit-border-radius: 3px;
+                 border-radius: 3px;
+                 border: 1px solid #808074;
+                 box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
+          }
+
+          /* hide the original tooltip */
+          .vis-tooltip {
+            display:none;
+          }
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "id": "superconducting_metamaterials", "label": "superconducting_metamaterials", "name": "superconducting_metamaterials", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eThe Physics and Applications of Superconducting ...\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/pdf/1004.3226\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "superconductivity", "label": "superconductivity", "name": "superconductivity", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eThe Physics and Applications of Superconducting ...\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/pdf/1004.3226\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "rf,_microwave,_low-thz_frequency_range", "label": "rf,_microwave,_low-thz_frequency_range", "name": "rf,_microwave,_low-thz_frequency_range", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eThe Physics and Applications of Superconducting ...\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/pdf/1004.3226\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "zero_dc_resistance", "label": "zero_dc_resistance", "name": "zero_dc_resistance", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eThe Physics and Applications of Superconducting ...\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/pdf/1004.3226\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "meissner_effect", "label": "meissner_effect", "name": "meissner_effect", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eThe Physics and Applications of Superconducting ...\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/pdf/1004.3226\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "macroscopic_quantum_phenomena", "label": "macroscopic_quantum_phenomena", "name": "macroscopic_quantum_phenomena", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eThe Physics and Applications of Superconducting ...\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/pdf/1004.3226\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "odd_frequency_superconductivity", "label": "odd_frequency_superconductivity", "name": "odd_frequency_superconductivity", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "zero_magnetic_induction", "label": "zero_magnetic_induction", "name": "zero_magnetic_induction", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "collaborators", "label": "collaborators", "name": "collaborators", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "arxiv", "label": "arxiv", "name": "arXiv", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "openness", "label": "openness", "name": "openness", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "community", "label": "community", "name": "community", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "excellence", "label": "excellence", "name": "excellence", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "user_data_privacy", "label": "user_data_privacy", "name": "user_data_privacy", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "paramagnetic_effect", "label": "paramagnetic_effect", "name": "paramagnetic_effect", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}, {"color": "#97c2fc", "id": "arxivlabs", "label": "arxivlabs", "name": "arXivLabs", "shape": "dot", "size": 10, "title": "\u003ca href=\"https://arxiv.org/pdf/1605.02199\" target=\"_blank\"\u003e[2105.11065] Meissner Effect: History of Development and ... [2105.11065] Meissner Effect: History of Development and ... Meissner E ect: History of Development and Novel Aspects The origin of the Meissner effect in new and old superconductors August8,2018 arXiv:1610.02993v1 [math-ph] 10 Oct 2016 The Physical Origins of the Meissner Effect and London ... Meissner Effect: History of Development and Novel Aspects Superconductors - Meissner Effect Meissner Effect: History of Development and Novel Aspects Revisiting Meissner e\ufb00e - arXiv.org\u003c/a\u003e\u003cbr/\u003e\u003ca href=\"https://arxiv.org/abs/2105.11065\" target=\"_blank\"\u003eIntrinsic Paramagnetic Meissner Effect due to s-wave Odd ...\u003c/a\u003e\u003cbr/\u003e", "type": "concept"}]);
+                  edges = new vis.DataSet([{"from": "superconducting_metamaterials", "relations": ["utilize", "involves", "related_to"], "to": "superconductivity", "width": 1}, {"from": "superconducting_metamaterials", "relations": ["operate_in"], "to": "rf,_microwave,_low-thz_frequency_range", "width": 1}, {"from": "superconductivity", "relations": ["enables", "has_property", "involves"], "to": "zero_dc_resistance", "width": 1}, {"from": "superconductivity", "relations": ["leads_to", "enables", "has_property", "related_to", "exhibits"], "to": "meissner_effect", "width": 1}, {"from": "superconductivity", "relations": ["related_to", "has_property", "involves"], "to": "macroscopic_quantum_phenomena", "width": 1}, {"from": "superconductivity", "relations": ["operates_in", "involves"], "to": "rf,_microwave,_low-thz_frequency_range", "width": 1}, {"from": "superconductivity", "relations": ["competes_with"], "to": "odd_frequency_superconductivity", "width": 1}, {"from": "superconductivity", "relations": ["involves"], "to": "zero_magnetic_induction", "width": 1}, {"from": "superconductivity", "relations": ["involves"], "to": "collaborators", "width": 1}, {"from": "superconductivity", "relations": ["involves"], "to": "arxiv", "width": 1}, {"from": "superconductivity", "relations": ["involves"], "to": "openness", "width": 1}, {"from": "superconductivity", "relations": ["involves"], "to": "community", "width": 1}, {"from": "superconductivity", "relations": ["involves"], "to": "excellence", "width": 1}, {"from": "superconductivity", "relations": ["involves"], "to": "user_data_privacy", "width": 1}, {"from": "zero_dc_resistance", "relations": ["characterized_by"], "to": "meissner_effect", "width": 1}, {"from": "meissner_effect", "relations": ["characterized_by"], "to": "zero_magnetic_induction", "width": 1}, {"from": "meissner_effect", "relations": ["manifests_as"], "to": "paramagnetic_effect", "width": 1}, {"from": "arxivlabs", "relations": ["enables"], "to": "collaborators", "width": 1}, {"from": "arxivlabs", "relations": ["develops"], "to": "arxiv", "width": 1}, {"from": "arxiv", "relations": ["values"], "to": "openness", "width": 1}, {"from": "arxiv", "relations": ["values"], "to": "community", "width": 1}, {"from": "arxiv", "relations": ["values"], "to": "excellence", "width": 1}, {"from": "arxiv", "relations": ["values"], "to": "user_data_privacy", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {"physics": {"enabled": true, "stabilization": {"iterations": 10}}, "nodes": {"shape": "dot", "size": 25, "font": {"size": 16}}, "edges": {"smooth": {"type": "continuous"}}};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+                  // make a custom popup
+                      var popup = document.createElement("div");
+                      popup.className = 'popup';
+                      popupTimeout = null;
+                      popup.addEventListener('mouseover', function () {
+                          console.log(popup)
+                          if (popupTimeout !== null) {
+                              clearTimeout(popupTimeout);
+                              popupTimeout = null;
+                          }
+                      });
+                      popup.addEventListener('mouseout', function () {
+                          if (popupTimeout === null) {
+                              hidePopup();
+                          }
+                      });
+                      container.appendChild(popup);
+
+
+                      // use the popup event to show
+                      network.on("showPopup", function (params) {
+                          showPopup(params);
+                      });
+
+                      // use the hide event to hide it
+                      network.on("hidePopup", function (params) {
+                          hidePopup();
+                      });
+
+                      // hiding the popup through css
+                      function hidePopup() {
+                          popupTimeout = setTimeout(function () { popup.style.display = 'none'; }, 500);
+                      }
+
+                      // showing the popup
+                      function showPopup(nodeId) {
+                          // get the data from the vis.DataSet
+                          var nodeData = nodes.get([nodeId]);
+                          popup.innerHTML = nodeData[0].title;
+
+                          // get the position of the node
+                          var posCanvas = network.getPositions([nodeId])[nodeId];
+
+                          // get the bounding box of the node
+                          var boundingBox = network.getBoundingBox(nodeId);
+
+                          //position tooltip:
+                          posCanvas.x = posCanvas.x + 0.5 * (boundingBox.right - boundingBox.left);
+
+                          // convert coordinates to the DOM space
+                          var posDOM = network.canvasToDOM(posCanvas);
+
+                          // Give it an offset
+                          posDOM.x += 10;
+                          posDOM.y -= 20;
+
+                          // show and place the tooltip.
+                          popup.style.display = 'block';
+                          popup.style.top = posDOM.y + 'px';
+                          popup.style.left = posDOM.x + 'px';
+                      }
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    
+<style>
+.context-menu {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 12px;
+    z-index: 10000;
+    min-width: 280px;
+    max-width: 400px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+}
+.context-menu h4 {
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+    font-size: 16px;
+}
+.context-menu .section {
+    margin-bottom: 10px;
+}
+.context-menu .section-title {
+    font-weight: bold;
+    color: #34495e;
+    margin-bottom: 4px;
+    font-size: 13px;
+}
+.context-menu ul {
+    padding-left: 16px;
+    margin: 4px 0;
+}
+.context-menu li {
+    margin-bottom: 3px;
+}
+.context-menu a {
+    color: #2980b9;
+    text-decoration: none;
+}
+.context-menu a:hover {
+    text-decoration: underline;
+}
+.context-menu button {
+    width: 100%;
+    padding: 7px;
+    margin-top: 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+}
+.context-menu .delete-btn {
+    background: #e74c3c;
+    color: white;
+}
+.context-menu .delete-btn:hover {
+    background: #c0392b;
+}
+.context-menu .close-btn {
+    background: #95a5a6;
+    color: white;
+    margin-top: 4px;
+}
+.context-menu .close-btn:hover {
+    background: #7f8c8d;
+}
+</style>
+
+<script type="text/javascript">
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('contextMenu');
+    if (menu && !menu.contains(e.target)) {
+        menu.remove();
+    }
+});
+
+network.on("click", function(params) {
+    const existingMenu = document.getElementById('contextMenu');
+    if (existingMenu) existingMenu.remove();
+
+    if (params.nodes.length > 0) {
+        const nodeId = params.nodes[0];
+        fetch('/get-node/' + encodeURIComponent(nodeId))
+            .then(response => response.json())
+            .then(node => {
+                if (node.error) return;
+
+                const menu = document.createElement('div');
+                menu.id = 'contextMenu';
+                menu.className = 'context-menu';
+                menu.style.left = (params.pointer.DOM.x + 5) + 'px';
+                menu.style.top = (params.pointer.DOM.y + 5) + 'px';
+
+                // Format titles
+                const titlesHtml = node.title.map(t => `<li>${t}</li>`).join('');
+                // Format URLs
+                const urlsHtml = node.url.map(u => {
+                    const cleanUrl = u.trim();
+                    return `<li><a href="${cleanUrl}" target="_blank">${cleanUrl}</a></li>`;
+                }).join('');
+
+                menu.innerHTML = `
+                    <h4>${nodeId}</h4>
+                    <div class="section">
+                        <div class="section-title">Type:</div>
+                        <div>${node.type || '—'}</div>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">Titles:</div>
+                        <ul>${titlesHtml}</ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">URLs:</div>
+                        <ul>${urlsHtml}</ul>
+                    </div>
+                    <button class="delete-btn" onclick="deleteNode('${nodeId}')">Delete Node</button>
+                    <button class="close-btn" onclick="this.parentElement.remove()">Close</button>
+                `;
+                document.body.appendChild(menu);
+            })
+            .catch(err => console.error('Failed to load node:', err));
+    }
+});
+
+function deleteNode(nodeId) {
+    if (!confirm('Delete node "' + nodeId + '" and all its connections?')) return;
+    
+    fetch('/delete-node/' + encodeURIComponent(nodeId), { method: 'DELETE' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown'));
+            }
+        });
+}
+</script></body>
+</html>
