@@ -13,10 +13,14 @@ import json
 from pyvis.network import Network
 from app.customjs import custom_js
 from app.log import logger
+from dotenv import load_dotenv
 
+load_dotenv()
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-BASE_URL = ""
+BASE_URL = os.environ['BASE_URL']
+MODEL_NAME= os.environ['MODEL_NAME']
+
 CHUNK_STOP = 2
 DOCUMENTS_STOP =6
 
@@ -40,14 +44,21 @@ class ArXivKnowledgeGraph:
         """Initialize the knowledge graph builder"""
         self.openai_api_key = openai_api_key
         
-        # Initialize LLM
-        self.llm = ChatOpenAI(
-            temperature=0.1,
-            model_name="gpt-5-nano-2025-08-07",#"qwen",
-            #openai_api_base=BASE_URL,
-            openai_api_key=openai_api_key
-        )
-        
+        if MODEL_NAME == "qwen":
+             self.llm = ChatOpenAI(
+                temperature=0.1,
+                model_name="qwen",
+                openai_api_base=BASE_URL,
+                openai_api_key=openai_api_key
+            )
+        else:
+            self.llm = ChatOpenAI(
+                temperature=0.1,
+                model_name="gpt-5-nano-2025-08-07",#"qwen",
+                #openai_api_base=BASE_URL,
+                openai_api_key=openai_api_key
+            )
+        self._test_connection()
         # Initialize text splitter
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=5000,
