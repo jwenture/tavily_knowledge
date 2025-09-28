@@ -2,7 +2,10 @@ import logging
 from contextlib import asynccontextmanager
 from app.connect_db import MongoHandler
 logger = logging.getLogger(__name__)  # Use a specific name
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 MONGO_SERVER = 'localhost:27017'
 MONGO_CONNECTION_STRING = f"mongodb://usertesting:passtesting@{MONGO_SERVER}?directConnection=true"
 MONGO_LOGGING_DATABASE = "logging_db"

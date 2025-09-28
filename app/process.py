@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 from app.log import logger
+
+
 # Add the parent directory to Python path
 current_dir = Path(__file__).parent
 parent_dir = current_dir.parent

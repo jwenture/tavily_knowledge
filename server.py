@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -9,19 +9,43 @@ from pathlib import Path
 from pydantic import BaseModel
 from app.process import ProcessFlow
 from app.log import logger, lifespan
+from dotenv import load_dotenv
+import os
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+import secrets
 
+USERNAME = os.getenv("API_USERNAME", "tavilytester")
+PASSWORD = os.getenv("API_PASSWORD", "tavilytesting")
+
+load_dotenv()
+tavily_api_key = os.getenv("TAVILY_API_KEY")
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
 
 class SearchQuery(BaseModel):
     query: str
 
 app = FastAPI(lifespan=lifespan)
-pflow = ProcessFlow(tavily_api_key="", openai_api_key="iliketesting")
+security = HTTPBasic()
+pflow = ProcessFlow(tavily_api_key=tavily_api_key, openai_api_key=openai_api_key)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/lib", StaticFiles(directory="lib"), name="lib")
 
 templates = Jinja2Templates(directory="templates")
+
+def authenticate_user(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_username = secrets.compare_digest(credentials.username, USERNAME)
+    correct_password = secrets.compare_digest(credentials.password, PASSWORD)
+    
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
 
 # Configuration
 OUTPUT_HTML_PATH = "static/output.html"
@@ -30,7 +54,7 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")  # Set this in your environment
 
 
 @app.get("/test-error")
-async def test_error():
+async def test_error(username: str = Depends(authenticate_user)):
     try:
         1 / 0
     except Exception as e:
@@ -38,7 +62,7 @@ async def test_error():
         return {"error": str(e)}
 
 @app.get('/get-node/{node_id}')
-def get_node(node_id):
+def get_node(node_id: str, username: str = Depends(authenticate_user)):
     """Return full node data by ID (node_id is a string)"""
     decoded_node_id = unquote(node_id)
     decoded_node_id = decoded_node_id.strip().lower().replace(" ", "_")
@@ -53,13 +77,13 @@ def get_node(node_id):
     raise HTTPException(status_code=404, detail="Node not found")
 
 @app.get('/redraw')
-def redraw_graph():
+def redraw_graph( username: str = Depends(authenticate_user)):
     pflow.graph_generator.load_graph()
     pflow.graph_generator.create_html_graph()
     return {"success": True}
 
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
+async def home(request: Request, username: str = Depends(authenticate_user)):
     """Serve the main page with current graph (if exists)"""
     return templates.TemplateResponse(
         "index.html", 
@@ -67,7 +91,7 @@ async def home(request: Request):
     )
 
 @app.post("/search")
-async def search_papers(search_query: SearchQuery):
+async def search_papers(search_query: SearchQuery, username: str = Depends(authenticate_user)):
     """Handle search requests and generate knowledge graph"""
     query = search_query.query
     logger.info(f"Received query: {query}")
@@ -83,7 +107,7 @@ async def search_papers(search_query: SearchQuery):
         return {"status": "error", "message": str(e)}
 
 @app.get("/graph")
-async def get_graph():
+async def get_graph(username: str = Depends(authenticate_user)):
     """Serve the latest graph HTML"""
     if os.path.exists(OUTPUT_HTML_PATH):
         return FileResponse(OUTPUT_HTML_PATH)
@@ -91,7 +115,7 @@ async def get_graph():
 
 
 @app.delete('/delete-node/{node_id}')
-def delete_node(node_id: str):
+def delete_node(node_id: str, username: str = Depends(authenticate_user)):
     """Delete node by ID (string) and all connected edges"""
     decoded_node_id = unquote(node_id)
     decoded_node_id = decoded_node_id.strip().lower().replace(" ", "_")
