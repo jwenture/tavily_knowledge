@@ -22,7 +22,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>ArXiv Knowledge Graph Generator</h1>
+        <h2>ArXiv Knowledge Graph Generator</h2>
         
         <form class="search-box" id="searchForm">
             <input type="text" id="query" name="query" placeholder="Enter your research query..." required>
@@ -30,7 +30,24 @@
         </form>
         
         <div id="status"></div>
-        
+        <div class="process-steps">
+    <div class="step">
+        <h4>🔍 Search ArXiv</h4>
+        <p>We query the ArXiv preprint repository using Tavily Search to find the most relevant recent papers matching your interests.</p>
+    </div>
+    
+    <div class="step">
+        <h4>🧠 Extract Concepts</h4>
+        <p>Our AI analyzes each paper to identify key entities, ideas, methods, and findings mentioned in the research.</p>
+    </div>
+    
+    <div class="step">
+        <h4>🕸️ Build Connections</h4>
+        <p>The system maps relationships between concepts, revealing how different ideas connect across multiple papers in your field.</p>
+    </div>
+</div>
+
+<p class="tip">Try searching for topics like "quantum machine learning", "climate modeling", or "neural networks" to explore the interconnected landscape of cutting-edge research.</p>
         <div id="graph-container">
             {% if has_graph %}
                 <iframe src="/graph" width="100%" height="600px" frameborder="0"></iframe>
