@@ -6,7 +6,7 @@ from langchain.schema import Document
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
-
+import random
 import networkx as nx
 import matplotlib.pyplot as plt
 import json
@@ -21,22 +21,26 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 BASE_URL = os.environ['BASE_URL']
 MODEL_NAME= os.environ['MODEL_NAME']
 
-CHUNK_STOP = 2
-DOCUMENTS_STOP =6
+CHUNK_STOP = 3
+DOCUMENTS_STOP =2
+
+class Relation(BaseModel):
+    entity1: str = Field(description="First entity in the relation")
+    relation: str = Field(description="Type of relationship between entities")
+    entity2: str = Field(description="Second entity in the relation")
 
 class TextAnalysisResponse(BaseModel):
     summary: str = Field(
         default="",
         description="Brief summary of the content"
     )
-
     entities: List[str] = Field(
         default_factory=list,
         description="List of key entities/concepts mentioned in the text"
     )
-    relations: List[Tuple[str, str, str]] = Field(
+    relations: List[Relation] = Field(
         default_factory=list,
-        description="List of relations between entities in format (entity1, relation, entity2)"
+        description="List of relations between entities"
     )
 
 class ArXivKnowledgeGraph:
@@ -54,7 +58,7 @@ class ArXivKnowledgeGraph:
         else:
             self.llm = ChatOpenAI(
                 temperature=0.1,
-                model_name="gpt-5-nano-2025-08-07",#"qwen",
+                model_name=MODEL_NAME,#"qwen",
                 #openai_api_base=BASE_URL,
                 openai_api_key=openai_api_key
             )
@@ -81,8 +85,8 @@ class ArXivKnowledgeGraph:
             #print(f"Test response: {test_response}")
         except Exception as e:
             #print(f"❌ Failed to connect to LLM: {e}")
-            logger.error(f"Could not connect to LLM at {BASE_URL}")
-            raise ConnectionError(f"Could not connect to LLM at {BASE_URL}") from e
+            logger.error(f"Could not connect to LLM {MODEL_NAME} {repr(e)}")
+            raise ConnectionError(f"Could not connect to LLM  {MODEL_NAME} {repr(e)}")
 
     def preprocess_papers_mock(self, papers: List[str]) -> List[Document]:
         """Preprocess the arXiv papers into documents"""
@@ -133,13 +137,25 @@ class ArXivKnowledgeGraph:
         # Remove excessive whitespace
         text = re.sub(r'\s+', ' ', text)
         return text.strip()
+    
+    def sample_existing_nodes(self, max_items=300):
+        existing_nodes = self.existing_nodes
+        if not existing_nodes:
+            return []
+        
+        items = list(existing_nodes)
+        if len(items) > max_items:
+            return random.sample(items, max_items)
+        else:
+            return items
 
     def extract_entities_relations(self, document: Document) -> Dict[str, Any]:
         """Extract entities and relations from a document chunk using LLM"""
         model_with_structure = self.llm.with_structured_output(TextAnalysisResponse)
         existing_nodes_prompt=""
-        if self.existing_nodes:
-            existing_nodes_prompt = "Here are all the existing nodes, do not create new nodes if it is similar to the existing nodes, just reuse the existing nodes in the exact same format: " + ", ".join(self.existing_nodes)
+        existing_nodes = self.sample_existing_nodes()
+        if existing_nodes:
+            existing_nodes_prompt = "Here are all the existing nodes, do not create new nodes if it is similar to the existing nodes, reuse the existing nodes in the exact same format: " + ", ".join(self.existing_nodes)
             
         # Create prompt template
         prompt_template = f"""
@@ -148,19 +164,20 @@ class ArXivKnowledgeGraph:
             2. Key entities/concepts (people, methods, theories, technologies, etc.)
             3. Relations between these entities in the format (entity1, relation, entity2)
             
-            The entities and relations should be reasonably broad and general to describe the paper,
-            systems, and general ideas. The total number of entities and relations should not exceed 5.
+            The entities and relations should contain general concepts that may be present in other papers.
+            It should be specific enough to the field of knowledge and system. ]
+            The total number of entities and relations should not exceed 5.
             {existing_nodes_prompt}
                  
-            Text from the research paper: {document.page_content}
+            Chunked text from the research paper: {document.page_content}
             """
         
         try:
             structured_output = model_with_structure.invoke(prompt_template)
-            print(f"✅ Parsed Output: {structured_output}")  # DEBUG
+            logger.debug(f"Parsed Output: {structured_output}")
             return structured_output.dict()
         except Exception as e:
-            print(f"❌ Parsing failed: {e}")
+            logger.error(f"Parsing failed: {e}")
             return {"entities": [], "relations": [], "summary": f"Error: {str(e)}"}
     
     def build_knowledge_graph(self, papers: List[str]):
@@ -169,7 +186,6 @@ class ArXivKnowledgeGraph:
         #documents = self.preprocess_papers_mock(papers)
         documents = self.preprocess_papers(papers)
         
-        print(f"Extracting knowledge from {len(documents)} chunks...")
         logger.info(f"Extracting knowledge from {len(documents)} chunks...")
         for i, doc in enumerate(documents):
             if i >= DOCUMENTS_STOP:
@@ -181,7 +197,7 @@ class ArXivKnowledgeGraph:
             logger.info(f"Processing chunk {i+1}/{len(documents)} | {extracted_data}")
             # Add entities as nodes
             for entity_ in extracted_data.get("entities", []):
-                entity = entity_.strip().lower().replace(" ", "_")
+                entity = entity_.strip().lower().replace(" ", "_").replace("-", "_")
                 if entity and isinstance(entity, str):
                     if entity not in self.graph:
                         self.graph.add_node(entity, type="concept", name=entity_, title=set(), url=set())
@@ -190,10 +206,12 @@ class ArXivKnowledgeGraph:
             
             # Add relations as edges
             for relation_tuple in extracted_data.get("relations", []):
-                if (isinstance(relation_tuple, list) or isinstance(relation_tuple, tuple)) and len(relation_tuple) == 3:
-                    entity1_, relation, entity2_ = relation_tuple
-                    entity1 = entity1_.strip().lower().replace(" ", "_")
-                    entity2 = entity2_.strip().lower().replace(" ", "_")
+                if (isinstance(relation_tuple, dict)) and len(relation_tuple) == 3:
+                    entity1_, relation, entity2_ = relation_tuple.get("entity1", ""), relation_tuple.get("relation", ""), relation_tuple.get("entity2", "")
+                    if not entity1_ or not relation or not entity2_:
+                        continue
+                    entity1 = entity1_.strip().lower().replace(" ", "_").replace("-", "_")
+                    entity2 = entity2_.strip().lower().replace(" ", "_").replace("-", "_")
                     if entity1 and entity2 and relation:
                         if entity1 not in self.graph:
                             self.graph.add_node(entity1, type="concept", name=entity1_, title=set(), url=set())
@@ -315,7 +333,6 @@ class ArXivKnowledgeGraph:
                 edge_data["target"],
                 relations=set(edge_data["relations"])
             )
-        print(self.graph.nodes)
 
     def process_graph_for_html(self):
         graph_out = nx.DiGraph() if self.graph.is_directed() else nx.Graph()
